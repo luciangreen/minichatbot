@@ -155,7 +155,7 @@ non_predictive_pair(token_count-_).
 non_predictive_pair(token(_)-_).
 non_predictive_pair(Key-Value) :-
     memberchk(Value, [something, someone, unknown, x]),
-    memberchk(Key, [actor, object, target, value]).
+    memberchk(Key, [object, target, value]).
 
 discourse_entities(Entities) :-
     get_state(last_reference, Reference),
