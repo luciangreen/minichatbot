@@ -55,7 +55,7 @@ chat_handler(Request) :-
 memory_handler(_Request) :-
     memory_snapshot(Snapshot),
     json_term(Snapshot, SnapshotJson),
-    reply_json_dict(_{memory:SnapshotJson}).
+    reply_json_dict(_{memory:SnapshotJson, counts:Snapshot.counts}).
 
 concepts_handler(_Request) :-
     list_concepts(Concepts),
@@ -492,7 +492,7 @@ home_page_html("<!DOCTYPE html>
         const conceptsData = await conceptsResponse.json();
         const predictionsData = await predictionsResponse.json();
 
-        const counts = (memoryData.memory && memoryData.memory.counts) || {};
+        const counts = memoryData.counts || {};
         observationCount.textContent = counts.observations || 0;
         predictionCount.textContent = counts.predictions || 0;
         conceptCount.textContent = counts.concepts || 0;

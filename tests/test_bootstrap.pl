@@ -69,6 +69,19 @@ test(web_home_page_contains_chat_ui, [setup(bootstrap), cleanup(stop_server)]) :
         sub_string(Body, _, _, _, "fetch('/chat'")
     )).
 
+test(web_memory_counts_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-
+    once((
+        start_server(8091),
+        setup_call_cleanup(
+            http_open('http://127.0.0.1:8091/memory', Stream, []),
+            json_read_dict(Stream, Json),
+            close(Stream)
+        ),
+        Json.counts.observations =:= 0,
+        Json.counts.predictions =:= 0,
+        string(Json.memory)
+    )).
+
 test(web_predictions_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-
     once((
         learn([action-create, mode-imperative], [], [object-song], _),
