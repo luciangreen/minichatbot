@@ -114,7 +114,10 @@ forget_concept(Name) :-
 revise_association(Known, Key, Value, Delta) :-
     (   retract(stored_association(Id, Known, Key, Value, Weight0, Evidence))
     ->  Weight is max(0, Weight0 + Delta),
-        assertz(stored_association(Id, Known, Key, Value, Weight, Evidence))
+        (   Weight =:= 0
+        ->  true
+        ;   assertz(stored_association(Id, Known, Key, Value, Weight, Evidence))
+        )
     ;   true
     ).
 

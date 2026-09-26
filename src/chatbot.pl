@@ -78,18 +78,13 @@ source_line_count(LineCount) :-
     sum_list(Counts, LineCount).
 
 source_files(Files) :-
-    source_file(chatbot:bootstrap, ThisFile),
-    file_directory_name(ThisFile, Dir),
-    directory_files(Dir, Entries),
-    include(prolog_file, Entries, PrologEntries),
-    findall(Path,
-        ( member(Entry, PrologEntries),
-          directory_file_path(Dir, Entry, Path)
+    kernel_modules(Modules),
+    findall(File,
+        ( member(Module, Modules),
+          module_property(Module, file(File))
         ),
-        Files).
-
-prolog_file(Name) :-
-    file_name_extension(_, pl, Name).
+        Files0),
+    sort(Files0, Files).
 
 file_line_count(Path, Count) :-
     setup_call_cleanup(

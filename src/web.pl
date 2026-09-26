@@ -62,16 +62,20 @@ predictions_handler(_Request) :-
 forget_handler(Request) :-
     http_read_json_dict(Request, Dict),
     (   _{observation_id:RawId} :< Dict
-    ->  normalize_request_atom(RawId, Id),
-        (   forget_observation(Id)
-        ->  reply_json_dict(_{forgotten:Id})
-        ;   reply_json_dict(_{error:"observation not found", observation_id:Id}, [status(404)])
+    ->  (   normalize_request_atom(RawId, Id)
+        ->  (   forget_observation(Id)
+            ->  reply_json_dict(_{forgotten:Id})
+            ;   reply_json_dict(_{error:"observation not found", observation_id:Id}, [status(404)])
+            )
+        ;   reply_json_dict(_{error:"observation_id must be a string or atom"}, [status(400)])
         )
     ;   _{concept:RawConcept} :< Dict
-    ->  normalize_request_atom(RawConcept, Concept),
-        (   forget_concept(Concept)
-        ->  reply_json_dict(_{forgotten:Concept})
-        ;   reply_json_dict(_{error:"concept not found", concept:Concept}, [status(404)])
+    ->  (   normalize_request_atom(RawConcept, Concept)
+        ->  (   forget_concept(Concept)
+            ->  reply_json_dict(_{forgotten:Concept})
+            ;   reply_json_dict(_{error:"concept not found", concept:Concept}, [status(404)])
+            )
+        ;   reply_json_dict(_{error:"concept must be a string or atom"}, [status(400)])
         )
     ;   reply_json_dict(_{error:"expected observation_id or concept"}, [status(400)])
     ).
@@ -101,4 +105,5 @@ normalize_request_atom(Value, Atom) :-
     string(Value),
     !,
     atom_string(Atom, Value).
-normalize_request_atom(Value, Value).
+normalize_request_atom(Value, Value) :-
+    atom(Value).

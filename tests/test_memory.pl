@@ -13,7 +13,9 @@ test(persists_and_reloads_memory, [setup(bootstrap)]) :-
           bootstrap,
           load_memory(Path),
           memory_snapshot(Snapshot),
-          Snapshot.counts.observations =:= 1
+          Snapshot.counts.observations =:= 1,
+          learn_observation([actor-robot, action-remembers, object-mother], NewId),
+          NewId == observation_2
         ),
         delete_file(Path)
     ).
