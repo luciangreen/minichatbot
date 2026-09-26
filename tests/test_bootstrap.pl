@@ -55,6 +55,20 @@ test(web_predictions_empty_state, [setup(bootstrap), cleanup(stop_server)]) :-
         sub_string(Body, _, _, _, "\"predictions\": []")
     )).
 
+test(web_home_page_contains_chat_ui, [setup(bootstrap), cleanup(stop_server)]) :-
+    once((
+        start_server(8092),
+        setup_call_cleanup(
+            http_open('http://127.0.0.1:8092/', Stream, []),
+            read_string(Stream, _, Body),
+            close(Stream)
+        ),
+        sub_string(Body, _, _, _, "<title>minichatbot</title>"),
+        sub_string(Body, _, _, _, "id=\"chat-form\""),
+        sub_string(Body, _, _, _, "Conversation"),
+        sub_string(Body, _, _, _, "fetch('/chat'")
+    )).
+
 test(web_predictions_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-
     once((
         learn([action-create, mode-imperative], [], [object-song], _),
