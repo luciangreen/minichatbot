@@ -110,13 +110,29 @@ forget_observation(Id) :-
 
 remove_observation_dependencies(Id) :-
     forall((stored_association(AssocId, Known, Key, Value, Weight, Evidence), memberchk(Id, Evidence)),
-        retractall(stored_association(AssocId, Known, Key, Value, Weight, Evidence))),
+        update_association_evidence(AssocId, Known, Key, Value, Weight, Evidence, Id)),
     forall((stored_concept(Name, Structure, Evidence, Meta), memberchk(Id, Evidence)),
-        retractall(stored_concept(Name, Structure, Evidence, Meta))),
+        update_concept_evidence(Name, Structure, Evidence, Meta, Id)),
     forall((stored_prediction(PredictionId, Known, Candidates, Selected, Explanation), term_references_id((Known,Candidates,Selected,Explanation), Id)),
         retractall(stored_prediction(PredictionId, Known, Candidates, Selected, Explanation))),
     forall((stored_correction(CorrectionId, Known, Rejected, Corrected, Evidence), term_references_id((Known,Rejected,Corrected,Evidence), Id)),
         retractall(stored_correction(CorrectionId, Known, Rejected, Corrected, Evidence))).
+
+update_association_evidence(AssocId, Known, Key, Value, Weight, Evidence, Id) :-
+    retractall(stored_association(AssocId, Known, Key, Value, Weight, Evidence)),
+    delete(Evidence, Id, Remaining),
+    (   Remaining == []
+    ->  true
+    ;   assertz(stored_association(AssocId, Known, Key, Value, Weight, Remaining))
+    ).
+
+update_concept_evidence(Name, Structure, Evidence, Meta, Id) :-
+    retractall(stored_concept(Name, Structure, Evidence, Meta)),
+    delete(Evidence, Id, Remaining),
+    (   Remaining == []
+    ->  true
+    ;   assertz(stored_concept(Name, Structure, Remaining, Meta))
+    ).
 
 term_references_id(Term, Id) :-
     sub_term(Id, Term).

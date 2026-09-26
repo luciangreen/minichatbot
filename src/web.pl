@@ -22,6 +22,7 @@
 :- http_handler(root(reset), reset_handler, [method(post)]).
 
 start_server(Port) :-
+    stop_server,
     http_server(http_dispatch, [port(Port)]),
     retractall(server_port(_)),
     assertz(server_port(Port)).

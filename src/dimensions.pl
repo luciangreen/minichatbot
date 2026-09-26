@@ -81,25 +81,30 @@ infer_pairs_from_tokens(Text, Tokens, Pairs) :-
     ),
     append([speech_act-SpeechAct, token_count-TokenCount|TokenPairs], CorePairs, Pairs).
 
-parse_question([what, did, Subject, Action|_],
-    [query-object, actor-Subject, action-Action]).
+parse_question([what, did, Subject, Action0|_],
+    [query-object, actor-Subject, action-Action]) :-
+    normalize_action(Action0, Action).
 parse_question([what, is, Subject|_],
     [query-predicate, actor-Subject]).
-parse_question([who, Action, Object|_],
-    [query-actor, action-Action, object-Object]).
+parse_question([who, Action0, Object|_],
+    [query-actor, action-Action, object-Object]) :-
+    normalize_action(Action0, Action).
 parse_question(_Tokens, _) :-
     fail.
 
 parse_statement([], []).
-parse_statement([Action, Object|Rest], [mode-imperative, action-Action, object-Object|Tail]) :-
+parse_statement([Action0, Object|Rest], [mode-imperative, action-Action, object-Object|Tail]) :-
+    normalize_action(Action0, Action),
     common_imperative(Action),
     !,
     qualifier_pairs(Rest, Tail).
-parse_statement([Actor, Action, Target, Object|Rest], [actor-Actor, action-Action, target-Target, object-Object|Tail]) :-
+parse_statement([Actor, Action0, Target, Object|Rest], [actor-Actor, action-Action, target-Target, object-Object|Tail]) :-
+    normalize_action(Action0, Action),
     pronoun_or_placeholder(Target),
     !,
     qualifier_pairs(Rest, Tail).
-parse_statement([Actor, Action, Object|Rest], [actor-Actor, action-Action, object-Object|Tail]) :-
+parse_statement([Actor, Action0, Object|Rest], [actor-Actor, action-Action, object-Object|Tail]) :-
+    normalize_action(Action0, Action),
     !,
     qualifier_pairs(Rest, Tail).
 parse_statement([Single], [value-Single]).
@@ -163,3 +168,8 @@ discover_dimension(Left0, Right0, discovery(NewDimension, LeftOnly, RightOnly)) 
     subtract(Left, Right, [LeftDimension-LeftOnly|_]),
     subtract(Right, Left, [_RightDimension-RightOnly|_]),
     atomic_list_concat([distinguishes, LeftDimension], '_', NewDimension).
+
+normalize_action(taught, teach).
+normalize_action(teaches, teach).
+normalize_action(teaching, teach).
+normalize_action(Value, Value).

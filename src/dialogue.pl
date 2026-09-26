@@ -120,8 +120,7 @@ corrected_pair(Pairs, Pair) :-
 
 discourse_entities(Entities) :-
     get_state(last_reference, Reference),
-    get_state(last_subject, Subject),
-    (get_state(last_target, Target) -> true ; Target = Subject),
+    get_state(last_target, Target),
     Entities = [reference-Reference, target-Target],
     !.
 discourse_entities(Entities) :-

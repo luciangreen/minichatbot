@@ -21,8 +21,17 @@ load_memory(Path) :-
             close(Stream)
         ),
         maplist(memory:valid_memory_term, Terms),
-        reset_memory,
-        maplist(import_memory_term, Terms)
+        findall(Current, memory_term(Current), CurrentTerms),
+        catch(
+            ( reset_memory,
+              maplist(import_memory_term, Terms)
+            ),
+            Error,
+            ( reset_memory,
+              maplist(import_memory_term, CurrentTerms),
+              throw(Error)
+            )
+        )
     ;   throw(error(existence_error(source_sink, Path), load_memory/1))
     ).
 
