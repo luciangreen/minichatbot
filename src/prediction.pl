@@ -50,6 +50,7 @@ observation_candidate(Known, Key, Value, Score, Id) :-
 association_candidate(Known, Key, Value, Score, Id) :-
     list_associations(Associations),
     member(association(Id, Pattern, Key, Value, Weight, _Evidence), Associations),
+    compatible_pattern(Known, Pattern),
     similarity(Known, Pattern, SimilarityScore),
     SimilarityScore > 0,
     \+ memberchk(Key-_, Known),
@@ -127,3 +128,11 @@ correction_relevant(Known, Pair, correction(_Id, CorrectionKnown, Rejected, Corr
     similarity(Known, CorrectionKnown, Score),
     Score > 0,
     (Pair == Rejected ; Pair == Corrected).
+
+compatible_pattern([], _).
+compatible_pattern([Key-Value|Rest], Pattern) :-
+    (   memberchk(Key-PatternValue, Pattern)
+    ->  PatternValue == Value
+    ;   true
+    ),
+    compatible_pattern(Rest, Pattern).

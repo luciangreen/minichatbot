@@ -39,12 +39,38 @@ kernel_measurement(measurement{
     learned_facts:ObservationCount,
     learned_concepts:ConceptCount
 }) :-
-    aggregate_all(count, current_predicate(chatbot:_/_), PredicateCount),
-    aggregate_all(count, clause(chatbot:_, _), ClauseCount),
+    kernel_modules(Modules),
+    kernel_predicate_count(Modules, PredicateCount),
+    kernel_clause_count(Modules, ClauseCount),
     source_line_count(LineCount),
     memory_snapshot(Snapshot),
     ObservationCount = Snapshot.counts.observations,
     ConceptCount = Snapshot.counts.concepts.
+
+kernel_modules([and, dimensions, memory, learner, prediction, concepts, generalise, similarity, explanation, dialogue, persistence, web, chatbot]).
+
+kernel_predicate_count(Modules, Count) :-
+    findall(Module:Name/Arity,
+        ( member(Module, Modules),
+          current_predicate(Module:Head),
+          predicate_property(Module:Head, file(_)),
+          \+ predicate_property(Module:Head, imported_from(_)),
+          functor(Head, Name, Arity)
+        ),
+        Predicates0),
+    sort(Predicates0, Predicates),
+    length(Predicates, Count).
+
+kernel_clause_count(Modules, Count) :-
+    findall(1,
+        ( member(Module, Modules),
+          current_predicate(Module:Head),
+          predicate_property(Module:Head, file(_)),
+          \+ predicate_property(Module:Head, imported_from(_)),
+          clause(Module:Head, _)
+        ),
+        Clauses),
+    length(Clauses, Count).
 
 source_line_count(LineCount) :-
     source_files(Files),

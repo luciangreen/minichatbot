@@ -8,6 +8,7 @@
 :- use_module(library(http/http_json)).
 :- use_module(dialogue).
 :- use_module(memory).
+:- use_module(concepts).
 
 :- dynamic server_port/1.
 
@@ -25,9 +26,10 @@ start_server(Port) :-
     assertz(server_port(Port)).
 
 stop_server :-
-    server_port(Port),
-    http_stop_server(Port, []),
-    retractall(server_port(_)).
+    (   retract(server_port(Port))
+    ->  http_stop_server(Port, [])
+    ;   true
+    ).
 
 home_handler(_Request) :-
     format('Content-type: text/html~n~n'),
@@ -35,9 +37,12 @@ home_handler(_Request) :-
 
 chat_handler(Request) :-
     http_read_json_dict(Request, Dict),
-    chat(Dict.input, Response, Debug),
-    debug_json(Debug, DebugJson),
-    reply_json_dict(_{response:Response, debug:DebugJson}).
+    (   _{input:Input} :< Dict
+    ->  chat(Input, Response, Debug),
+        debug_json(Debug, DebugJson),
+        reply_json_dict(_{response:Response, debug:DebugJson})
+    ;   reply_json_dict(_{error:"input is required"}, [status(400)])
+    ).
 
 memory_handler(_Request) :-
     memory_snapshot(Snapshot),
@@ -56,13 +61,15 @@ predictions_handler(_Request) :-
 
 forget_handler(Request) :-
     http_read_json_dict(Request, Dict),
-    (   _{observation_id:Id} :< Dict
-    ->  (   forget_observation(Id)
+    (   _{observation_id:RawId} :< Dict
+    ->  normalize_request_atom(RawId, Id),
+        (   forget_observation(Id)
         ->  reply_json_dict(_{forgotten:Id})
         ;   reply_json_dict(_{error:"observation not found", observation_id:Id}, [status(404)])
         )
-    ;   _{concept:Concept} :< Dict
-    ->  (   forget_concept(Concept)
+    ;   _{concept:RawConcept} :< Dict
+    ->  normalize_request_atom(RawConcept, Concept),
+        (   forget_concept(Concept)
         ->  reply_json_dict(_{forgotten:Concept})
         ;   reply_json_dict(_{error:"concept not found", concept:Concept}, [status(404)])
         )
@@ -89,3 +96,9 @@ json_terms(Terms, Strings) :-
 
 json_term(Term, String) :-
     term_string(Term, String).
+
+normalize_request_atom(Value, Atom) :-
+    string(Value),
+    !,
+    atom_string(Atom, Value).
+normalize_request_atom(Value, Value).

@@ -120,7 +120,7 @@ corrected_pair(Pairs, Pair) :-
 discourse_entities(Entities) :-
     get_state(last_reference, Reference),
     get_state(last_subject, Subject),
-    Entities = [Reference, Subject],
+    Entities = [Subject, Reference],
     !.
 discourse_entities(Entities) :-
     list_context(Context),
