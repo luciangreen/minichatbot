@@ -38,24 +38,24 @@ resolve_pairs([Key-Value|Rest], Entities, [Key-Resolved|ResolvedRest]) :-
     resolve_pairs(Rest, Entities, ResolvedRest).
 
 resolve_value(Value, Key, Entities, Resolved) :-
-    pronoun_slot(Value, Key, Index),
-    nth1(Index, Entities, Resolved),
+    pronoun_role(Value, Key, Role),
+    memberchk(Role-Resolved, Entities),
+    Resolved \== none,
     !.
 resolve_value(Value, _Key, _Entities, Value).
 
-pronoun_slot(it, target, 1).
-pronoun_slot(it, object, 1).
-pronoun_slot(he, actor, 2).
-pronoun_slot(him, actor, 2).
-pronoun_slot(she, actor, 2).
-pronoun_slot(her, actor, 2).
-pronoun_slot(they, actor, 2).
-pronoun_slot(them, actor, 2).
-pronoun_slot(Pronoun, _Key, Index) :-
+pronoun_role(it, target, target).
+pronoun_role(it, object, target).
+pronoun_role(he, actor, reference).
+pronoun_role(him, actor, reference).
+pronoun_role(she, actor, reference).
+pronoun_role(her, actor, reference).
+pronoun_role(they, actor, reference).
+pronoun_role(them, actor, reference).
+pronoun_role(Pronoun, _Key, reference) :-
     memberchk(Pronoun, [he, him, she, her, they, them]),
-    pronoun_slot(Pronoun, actor, Index),
     !.
-pronoun_slot(it, _Key, 1).
+pronoun_role(it, _Key, target).
 
 text_tokens(Text, Tokens) :-
     text_to_string(Text, String),
@@ -114,7 +114,7 @@ common_imperative(teach).
 common_imperative(request).
 
 pronoun_or_placeholder(Value) :-
-    pronoun_slot(Value, _, _),
+    pronoun_role(Value, _, _),
     !.
 pronoun_or_placeholder(something).
 pronoun_or_placeholder(someone).

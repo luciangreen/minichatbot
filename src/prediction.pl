@@ -106,9 +106,12 @@ sort_candidates(Candidates0, Candidates) :-
 positive_candidate(candidate(_, Score, _)) :-
     Score > 0.
 
-compare_candidates(Order, candidate(_, ScoreA, _), candidate(_, ScoreB, _)) :-
+compare_candidates(Order, candidate(PairA, ScoreA, _), candidate(PairB, ScoreB, _)) :-
     compare(Order0, ScoreB, ScoreA),
-    ( Order0 = (=) -> Order = (<) ; Order = Order0 ).
+    ( Order0 = (=)
+    -> compare(Order, PairA, PairB)
+    ;  Order = Order0
+    ).
 
 subset_pairs([], _).
 subset_pairs([Pair|Rest], Pairs) :-

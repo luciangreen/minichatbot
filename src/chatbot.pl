@@ -20,6 +20,7 @@
 :- use_module(and).
 :- use_module(dimensions).
 :- use_module(memory).
+:- use_module(generalise).
 :- use_module(learner).
 :- use_module(prediction).
 :- use_module(explanation).

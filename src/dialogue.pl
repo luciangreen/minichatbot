@@ -37,7 +37,8 @@ reset_dialogue :-
     clear_state(last_input),
     clear_state(last_response),
     clear_state(last_reference),
-    clear_state(last_subject).
+    clear_state(last_subject),
+    clear_state(last_target).
 
 correction_input(Pairs, Corrected) :-
     memberchk(token(1)-no, Pairs),
@@ -120,7 +121,8 @@ corrected_pair(Pairs, Pair) :-
 discourse_entities(Entities) :-
     get_state(last_reference, Reference),
     get_state(last_subject, Subject),
-    Entities = [Subject, Reference],
+    (get_state(last_target, Target) -> true ; Target = Subject),
+    Entities = [subject-Subject, reference-Reference, target-Target],
     !.
 discourse_entities(Entities) :-
     list_context(Context),
@@ -134,6 +136,7 @@ discourse_entities(Entities) :-
 
 update_discourse(Pairs) :-
     ( memberchk(actor-Actor, Pairs) -> set_state(last_subject, Actor) ; true ),
+    ( memberchk(target-Target, Pairs) -> set_state(last_target, Target) ; memberchk(actor-Actor, Pairs) -> set_state(last_target, Actor) ; true ),
     ( memberchk(target-_, Pairs) -> discourse_focus(Pairs, Focus)
     ; memberchk(object-_, Pairs) -> discourse_focus(Pairs, Focus)
     ; memberchk(actor-_, Pairs) -> discourse_focus(Pairs, Focus)
