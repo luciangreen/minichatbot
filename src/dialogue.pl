@@ -153,8 +153,9 @@ non_predictive_pair(query-_).
 non_predictive_pair(speech_act-_).
 non_predictive_pair(token_count-_).
 non_predictive_pair(token(_)-_).
-non_predictive_pair(_-Value) :-
-    memberchk(Value, [something, someone, unknown, x]).
+non_predictive_pair(Key-Value) :-
+    memberchk(Value, [something, someone, unknown, x]),
+    memberchk(Key, [actor, object, target, value]).
 
 discourse_entities(Entities) :-
     get_state(last_reference, Reference),
