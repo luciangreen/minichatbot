@@ -6,6 +6,7 @@
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_json)).
+:- use_module(library(http/json)).
 :- use_module(dialogue).
 :- use_module(memory).
 :- use_module(concepts).
@@ -36,12 +37,14 @@ home_handler(_Request) :-
     format('<html><body><h1>minichatbot</h1><p>POST /chat with JSON {"input":"..."}</p></body></html>').
 
 chat_handler(Request) :-
-    http_read_json_dict(Request, Dict),
-    (   _{input:Input} :< Dict
+    (   read_json_dict_safe(Request, Dict)
+    ->  (   _{input:Input} :< Dict
     ->  chat(Input, Response, Debug),
         debug_json(Debug, DebugJson),
         reply_json_dict(_{response:Response, debug:DebugJson})
     ;   reply_json_dict(_{error:"input is required"}, [status(400)])
+    )
+    ;   reply_json_dict(_{error:"invalid JSON body"}, [status(400)])
     ).
 
 memory_handler(_Request) :-
@@ -60,8 +63,8 @@ predictions_handler(_Request) :-
     reply_json_dict(_{predictions:PredictionStrings}).
 
 forget_handler(Request) :-
-    http_read_json_dict(Request, Dict),
-    (   _{observation_id:RawId} :< Dict
+    (   read_json_dict_safe(Request, Dict)
+    ->  (   _{observation_id:RawId} :< Dict
     ->  (   normalize_request_atom(RawId, Id)
         ->  (   forget_observation(Id)
             ->  reply_json_dict(_{forgotten:Id})
@@ -78,6 +81,8 @@ forget_handler(Request) :-
         ;   reply_json_dict(_{error:"concept must be a string or atom"}, [status(400)])
         )
     ;   reply_json_dict(_{error:"expected observation_id or concept"}, [status(400)])
+    )
+    ;   reply_json_dict(_{error:"invalid JSON body"}, [status(400)])
     ).
 
 reset_handler(_Request) :-
@@ -107,3 +112,6 @@ normalize_request_atom(Value, Atom) :-
     atom_string(Atom, Value).
 normalize_request_atom(Value, Value) :-
     atom(Value).
+
+read_json_dict_safe(Request, Dict) :-
+    catch(http_read_json_dict(Request, Dict), _, fail).

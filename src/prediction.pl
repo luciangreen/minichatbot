@@ -43,7 +43,7 @@ observation_candidate(Known, Key, Value, Score, Id) :-
     member(observation(Id, Pairs, _), Observations),
     subset_pairs(Known, Pairs),
     member(Key-Value, Pairs),
-    \+ memberchk(Key-_, Known),
+    key_missing_or_unknown(Known, Key),
     similarity(Known, Pairs, SimilarityScore),
     Score is 1.0 + SimilarityScore.
 
@@ -53,7 +53,7 @@ association_candidate(Known, Key, Value, Score, Id) :-
     compatible_pattern(Known, Pattern),
     similarity(Known, Pattern, SimilarityScore),
     SimilarityScore > 0,
-    \+ memberchk(Key-_, Known),
+    key_missing_or_unknown(Known, Key),
     Score is Weight + SimilarityScore.
 
 consolidate_candidates(Known, RawCandidates, Candidates) :-
@@ -136,3 +136,15 @@ compatible_pattern([Key-Value|Rest], Pattern) :-
     ;   true
     ),
     compatible_pattern(Rest, Pattern).
+
+key_missing_or_unknown(Known, Key) :-
+    \+ memberchk(Key-_, Known),
+    !.
+key_missing_or_unknown(Known, Key) :-
+    memberchk(Key-Value, Known),
+    placeholder_value(Value).
+
+placeholder_value(something).
+placeholder_value(someone).
+placeholder_value(unknown).
+placeholder_value(x).

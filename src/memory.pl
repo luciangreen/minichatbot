@@ -182,21 +182,31 @@ memory_term(stored_context(Id, Pairs, Source)) :-
 memory_term(id_counter(Type, Value)) :-
     id_counter(Type, Value).
 
-import_memory_term(stored_observation(Id, Pairs, Meta)) :-
-    assertz(stored_observation(Id, Pairs, Meta)).
-import_memory_term(stored_association(Id, Known, Key, Value, Weight, Evidence)) :-
-    assertz(stored_association(Id, Known, Key, Value, Weight, Evidence)).
-import_memory_term(stored_concept(Name, Structure, Evidence, Meta)) :-
-    assertz(stored_concept(Name, Structure, Evidence, Meta)).
-import_memory_term(stored_prediction(Id, Known, Candidates, Selected, Explanation)) :-
-    assertz(stored_prediction(Id, Known, Candidates, Selected, Explanation)).
-import_memory_term(stored_correction(Id, Known, Rejected, Corrected, Evidence)) :-
-    assertz(stored_correction(Id, Known, Rejected, Corrected, Evidence)).
-import_memory_term(stored_context(Id, Pairs, Source)) :-
-    assertz(stored_context(Id, Pairs, Source)).
-import_memory_term(id_counter(Type, Value)) :-
-    assertz(id_counter(Type, Value)).
-import_memory_term(_).
+import_memory_term(Term) :-
+    valid_memory_term(Term),
+    assertz(Term),
+    !.
+import_memory_term(Term) :-
+    throw(error(domain_error(memory_term, Term), import_memory_term/1)).
+
+valid_term_list(Value) :- is_list(Value).
+valid_meta(_).
+valid_atomic_or_term(Value) :- nonvar(Value).
+
+valid_memory_term(stored_observation(Id, Pairs, Meta)) :-
+    atom(Id), valid_term_list(Pairs), valid_meta(Meta).
+valid_memory_term(stored_association(Id, Known, Key, Value, Weight, Evidence)) :-
+    atom(Id), valid_term_list(Known), nonvar(Key), nonvar(Value), integer(Weight), valid_term_list(Evidence).
+valid_memory_term(stored_concept(Name, Structure, Evidence, Meta)) :-
+    atom(Name), valid_atomic_or_term(Structure), valid_term_list(Evidence), valid_meta(Meta).
+valid_memory_term(stored_prediction(Id, Known, Candidates, Selected, Explanation)) :-
+    atom(Id), valid_term_list(Known), valid_term_list(Candidates), valid_atomic_or_term(Selected), valid_atomic_or_term(Explanation).
+valid_memory_term(stored_correction(Id, Known, Rejected, Corrected, Evidence)) :-
+    atom(Id), valid_term_list(Known), valid_atomic_or_term(Rejected), valid_atomic_or_term(Corrected), valid_atomic_or_term(Evidence).
+valid_memory_term(stored_context(Id, Pairs, Source)) :-
+    atom(Id), valid_term_list(Pairs), valid_atomic_or_term(Source).
+valid_memory_term(id_counter(Type, Value)) :-
+    atom(Type), integer(Value), Value >= 0.
 
 normalize_evidence(Evidence0, Evidence) :-
     exclude(var, Evidence0, Evidence1),

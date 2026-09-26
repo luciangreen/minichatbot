@@ -16,6 +16,7 @@
       kernel_measurement/1
     ]).
 
+:- use_module(library(readutil)).
 :- use_module(and).
 :- use_module(dimensions).
 :- use_module(memory).
