@@ -103,14 +103,30 @@ reset_handler(_Request) :-
     reply_json_dict(_{status:"reset"}).
 
 debug_json(Debug, Json) :-
-    json_terms(Debug.dimensions, DimensionStrings),
-    json_term(Debug.prediction, PredictionString),
-    json_term(Debug.explanation, ExplanationString),
+    debug_dimensions(Debug, DimensionStrings),
+    debug_field_json(Debug, prediction, none, PredictionString),
+    debug_field_json(Debug, explanation, none, ExplanationString),
+    debug_field_json(Debug, rejected, none, RejectedString),
+    debug_field_json(Debug, corrected, none, CorrectedString),
     Json = _{
         dimensions:DimensionStrings,
         prediction:PredictionString,
-        explanation:ExplanationString
+        explanation:ExplanationString,
+        rejected:RejectedString,
+        corrected:CorrectedString
     }.
+
+debug_dimensions(Debug, DimensionStrings) :-
+    (   get_dict(dimensions, Debug, Dimensions)
+    ->  json_terms(Dimensions, DimensionStrings)
+    ;   DimensionStrings = []
+    ).
+
+debug_field_json(Debug, Key, Default, JsonValue) :-
+    (   get_dict(Key, Debug, Value)
+    ->  json_term(Value, JsonValue)
+    ;   json_term(Default, JsonValue)
+    ).
 
 json_terms(Terms, Strings) :-
     maplist(json_term, Terms, Strings).

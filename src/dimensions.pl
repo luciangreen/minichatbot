@@ -93,6 +93,10 @@ parse_question(_Tokens, _) :-
     fail.
 
 parse_statement([], []).
+parse_statement([no, Actor, Action0, Object|Rest], [actor-Actor, action-Action, object-Object|Tail]) :-
+    normalize_action(Action0, Action),
+    !,
+    qualifier_pairs(Rest, Tail).
 parse_statement([Action0, Object|Rest], [mode-imperative, action-Action, object-Object|Tail]) :-
     normalize_action(Action0, Action),
     common_imperative(Action),
@@ -172,4 +176,15 @@ discover_dimension(Left0, Right0, discovery(NewDimension, LeftOnly, RightOnly)) 
 normalize_action(taught, teach).
 normalize_action(teaches, teach).
 normalize_action(teaching, teach).
+normalize_action(creates, create).
+normalize_action(created, create).
+normalize_action(creating, create).
+normalize_action(makes, make).
+normalize_action(made, make).
+normalize_action(making, make).
+normalize_action(is, be).
+normalize_action(am, be).
+normalize_action(are, be).
+normalize_action(was, be).
+normalize_action(were, be).
 normalize_action(Value, Value).
