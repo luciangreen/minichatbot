@@ -52,7 +52,7 @@ answer_from_context(Pairs, Response, Debug, EventId) :-
         context_answer(Actor, Action, Object)
     ->  format(string(Response), "~w", [Object]),
         Debug = debug{dimensions:Pairs, prediction:Object, explanation:context}
-    ;   predict_response(Pairs, Response, Debug, _)
+    ;   predict_response_no_context(Pairs, Response, Debug)
     ).
 
 context_answer(Actor, Action, Object) :-
@@ -71,19 +71,29 @@ partial_observation(Pairs) :-
 partial_observation(Pairs) :-
     member(query-_, Pairs).
 
+predict_response_no_context(Pairs, Response, Debug) :-
+    exclude(query_marker, Pairs, PredictionPairs),
+    predict_known_dimensions(PredictionPairs, Candidates),
+    prediction_result(PredictionPairs, Candidates, Response, Debug).
+
+query_marker(query-_).
+
 predict_response(Pairs, Response, Debug, EventId) :-
     remember_context(Pairs, user_partial, EventId),
     update_discourse(Pairs),
     predict_known_dimensions(Pairs, Candidates),
+    prediction_result(Pairs, Candidates, Response, Debug).
+
+prediction_result(KnownPairs, Candidates, Response, Debug) :-
     (   best_candidate(Candidates, best(BestPair, Score, _Evidence))
-    ->  explain_prediction(Pairs, BestPair, Explanation),
-        remember_prediction(Pairs, Candidates, BestPair, Explanation, _PredictionId),
-        set_state(last_prediction, prediction(Pairs, BestPair)),
-        set_state(last_input, Pairs),
+    ->  explain_prediction(KnownPairs, BestPair, Explanation),
+        remember_prediction(KnownPairs, Candidates, BestPair, Explanation, _PredictionId),
+        set_state(last_prediction, prediction(KnownPairs, BestPair)),
+        set_state(last_input, KnownPairs),
         format(string(Response), "I predict ~w (~2f)", [BestPair, Score]),
-        Debug = debug{dimensions:Pairs, prediction:BestPair, explanation:Explanation}
+        Debug = debug{dimensions:KnownPairs, prediction:BestPair, explanation:Explanation}
     ;   Response = "I do not know yet.",
-        Debug = debug{dimensions:Pairs, prediction:none, explanation:none}
+        Debug = debug{dimensions:KnownPairs, prediction:none, explanation:none}
     ).
 
 handle_correction(CorrectedPairs, Response, Debug, EventId) :-

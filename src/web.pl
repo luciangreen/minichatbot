@@ -58,15 +58,12 @@ forget_handler(Request) :-
     http_read_json_dict(Request, Dict),
     (   _{observation_id:Id} :< Dict
     ->  forget_observation(Id),
-        Reply = _{forgotten:Id}
+        reply_json_dict(_{forgotten:Id})
     ;   _{concept:Concept} :< Dict
     ->  forget_concept(Concept),
-        Reply = _{forgotten:Concept}
-    ;   Reply = _{error:"expected observation_id or concept"},
-        reply_json_dict(Reply, [status(400)]),
-        !
-    ),
-    reply_json_dict(Reply).
+        reply_json_dict(_{forgotten:Concept})
+    ;   reply_json_dict(_{error:"expected observation_id or concept"}, [status(400)])
+    ).
 
 reset_handler(_Request) :-
     reset_memory,

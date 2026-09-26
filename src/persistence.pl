@@ -6,10 +6,12 @@
 :- use_module(memory).
 
 save_memory(Path) :-
-    open(Path, write, Stream),
-    forall(memory_term(Term),
-        write_term(Stream, Term, [fullstop(true), nl(true)])),
-    close(Stream).
+    setup_call_cleanup(
+        open(Path, write, Stream),
+        forall(memory_term(Term),
+            write_term(Stream, Term, [fullstop(true), nl(true)])),
+        close(Stream)
+    ).
 
 load_memory(Path) :-
     reset_memory,
