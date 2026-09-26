@@ -24,11 +24,11 @@ load_memory(Path) :-
         findall(Current, memory_term(Current), CurrentTerms),
         catch(
             ( reset_memory,
-              maplist(import_memory_term, Terms)
+              maplist(memory:import_memory_term, Terms)
             ),
             Error,
             ( reset_memory,
-              maplist(import_memory_term, CurrentTerms),
+              maplist(memory:import_memory_term, CurrentTerms),
               throw(Error)
             )
         )

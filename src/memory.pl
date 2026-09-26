@@ -21,7 +21,8 @@
       clear_state/1,
       next_id/2,
       memory_term/1,
-      import_memory_term/1
+      import_memory_term/1,
+      valid_memory_term/1
     ]).
 
 :- use_module(library(lists)).
@@ -121,9 +122,10 @@ remove_observation_dependencies(Id) :-
 update_association_evidence(AssocId, Known, Key, Value, Weight, Evidence, Id) :-
     retractall(stored_association(AssocId, Known, Key, Value, Weight, Evidence)),
     delete(Evidence, Id, Remaining),
+    length(Remaining, NewWeight),
     (   Remaining == []
     ->  true
-    ;   assertz(stored_association(AssocId, Known, Key, Value, Weight, Remaining))
+    ;   assertz(stored_association(AssocId, Known, Key, Value, NewWeight, Remaining))
     ).
 
 update_concept_evidence(Name, Structure, Evidence, Meta, Id) :-

@@ -22,16 +22,19 @@
 :- http_handler(root(reset), reset_handler, [method(post)]).
 
 start_server(Port) :-
-    stop_server,
-    http_server(http_dispatch, [port(Port)]),
-    retractall(server_port(_)),
-    assertz(server_port(Port)).
+    with_mutex(web_server_lifecycle,
+        ( stop_server,
+          http_server(http_dispatch, [port(Port)]),
+          retractall(server_port(_)),
+          assertz(server_port(Port))
+        )).
 
 stop_server :-
-    (   retract(server_port(Port))
-    ->  http_stop_server(Port, [])
-    ;   true
-    ).
+    with_mutex(web_server_lifecycle,
+        (   retract(server_port(Port))
+        ->  http_stop_server(Port, [])
+        ;   true
+        )).
 
 home_handler(_Request) :-
     format('Content-type: text/html~n~n'),
@@ -93,8 +96,8 @@ forget_handler(Request) :-
     ).
 
 reset_handler(_Request) :-
-    reset_memory,
     reset_dialogue,
+    reset_memory,
     reply_json_dict(_{status:"reset"}).
 
 debug_json(Debug, Json) :-
@@ -137,4 +140,8 @@ identifier_matches(Value, Id) :-
     atom_string(Id, Value).
 
 read_json_dict_safe(Request, Dict) :-
-    catch(http_read_json_dict(Request, Dict), _, fail).
+    catch(http_read_json_dict(Request, Dict), Error, (json_read_error(Error), fail)).
+
+json_read_error(error(syntax_error(_), _)).
+json_read_error(error(type_error(json_term, _), _)).
+json_read_error(error(domain_error(json, _), _)).
