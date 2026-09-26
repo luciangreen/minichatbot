@@ -480,17 +480,27 @@ home_page_html("<!DOCTYPE html>
       });
     }
 
+    async function fetchJson(url, options) {
+      const response = await fetch(url, options);
+      const contentType = response.headers.get('content-type') || '';
+      const data = contentType.includes('application/json')
+        ? await response.json()
+        : null;
+
+      if (!response.ok) {
+        throw new Error((data && data.error) || `Request failed for ${url}.`);
+      }
+
+      return data;
+    }
+
     async function refreshSidebar() {
       try {
-        const [memoryResponse, conceptsResponse, predictionsResponse] = await Promise.all([
-          fetch('/memory'),
-          fetch('/concepts'),
-          fetch('/predictions')
+        const [memoryData, conceptsData, predictionsData] = await Promise.all([
+          fetchJson('/memory'),
+          fetchJson('/concepts'),
+          fetchJson('/predictions')
         ]);
-
-        const memoryData = await memoryResponse.json();
-        const conceptsData = await conceptsResponse.json();
-        const predictionsData = await predictionsResponse.json();
 
         const counts = memoryData.counts || {};
         observationCount.textContent = counts.observations || 0;
@@ -519,16 +529,11 @@ home_page_html("<!DOCTYPE html>
       setBusy(true, 'Waiting for minichatbot...');
 
       try {
-        const response = await fetch('/chat', {
+        const data = await fetchJson('/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ input: message })
         });
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Request failed.');
-        }
 
         addMessage('assistant', 'Bot', data.response);
         debugOutput.textContent = JSON.stringify(data.debug, null, 2);
@@ -547,12 +552,7 @@ home_page_html("<!DOCTYPE html>
       setBusy(true, 'Resetting memory...');
 
       try {
-        const response = await fetch('/reset', { method: 'POST' });
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Reset failed.');
-        }
+        await fetchJson('/reset', { method: 'POST' });
 
         transcript.innerHTML = '';
         debugOutput.textContent = 'Send a message to inspect model details.';

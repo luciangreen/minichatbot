@@ -79,6 +79,8 @@ test(web_memory_counts_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-
         ),
         Json.counts.observations =:= 0,
         Json.counts.predictions =:= 0,
+        Json.counts.concepts =:= 0,
+        Json.counts.corrections =:= 0,
         string(Json.memory)
     )).
 
