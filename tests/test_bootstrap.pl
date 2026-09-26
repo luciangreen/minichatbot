@@ -55,6 +55,60 @@ test(web_predictions_empty_state, [setup(bootstrap), cleanup(stop_server)]) :-
         sub_string(Body, _, _, _, "\"predictions\": []")
     )).
 
+test(web_home_page_contains_chat_ui, [setup(bootstrap), cleanup(stop_server)]) :-
+    once((
+        start_server(8092),
+        setup_call_cleanup(
+            http_open('http://127.0.0.1:8092/', Stream, []),
+            read_string(Stream, _, Body),
+            close(Stream)
+        ),
+        sub_string(Body, _, _, _, "<title>minichatbot</title>"),
+        sub_string(Body, _, _, _, "id=\"chat-form\""),
+        sub_string(Body, _, _, _, "Conversation"),
+        sub_string(Body, _, _, _, "fetch('/chat'")
+    )).
+
+test(web_memory_counts_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-
+    once((
+        start_server(8091),
+        setup_call_cleanup(
+            http_open('http://127.0.0.1:8091/memory', Stream, []),
+            json_read_dict(Stream, Json),
+            close(Stream)
+        ),
+        string(Json.memory),
+        Json.snapshot.counts.observations =:= 0,
+        Json.snapshot.counts.associations =:= 0,
+        Json.snapshot.counts.predictions =:= 0,
+        Json.snapshot.counts.concepts =:= 0,
+        Json.snapshot.counts.corrections =:= 0,
+        Json.snapshot.observations == [],
+        Json.snapshot.associations == [],
+        Json.snapshot.concept_labels == [],
+        Json.snapshot.prediction_labels == []
+    )).
+
+test(web_memory_counts_endpoint_after_activity, [setup(bootstrap), cleanup(stop_server)]) :-
+    once((
+        learn([action-create, mode-imperative], [], [object-song], _),
+        chat("create something", _, _),
+        start_server(8090),
+        setup_call_cleanup(
+            http_open('http://127.0.0.1:8090/memory', Stream, []),
+            json_read_dict(Stream, Json),
+            close(Stream)
+        ),
+        Json.snapshot.counts.observations =:= 1,
+        Json.snapshot.counts.associations =:= 1,
+        Json.snapshot.counts.predictions =:= 1,
+        Json.snapshot.counts.concepts =:= 0,
+        Json.snapshot.counts.corrections =:= 0,
+        Json.snapshot.associations = [_|_],
+        Json.snapshot.prediction_labels = [FirstPrediction|_],
+        FirstPrediction == "object-song"
+    )).
+
 test(web_predictions_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-
     once((
         learn([action-create, mode-imperative], [], [object-song], _),
