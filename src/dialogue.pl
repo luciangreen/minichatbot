@@ -21,7 +21,7 @@ chat(Input, Response, Debug, EventId) :-
     observation_pairs(Observation, Pairs),
     (   correction_input(Pairs, CorrectionPairs)
     ->  handle_correction(CorrectionPairs, Response, Debug, EventId)
-    ;   memberchk(query-object, Pairs)
+    ;   query_input(Pairs)
     ->  answer_from_context(Pairs, Response, Debug, EventId)
     ;   partial_observation(Pairs)
     ->  predict_response(Pairs, Response, Debug, EventId)
@@ -50,21 +50,37 @@ is_prefix_noise(token_count-_).
 
 answer_from_context(Pairs, Response, Debug, EventId) :-
     remember_context(Pairs, user_query, EventId),
-    (   memberchk(actor-Actor, Pairs),
+    (   memberchk(query-object, Pairs),
+        memberchk(actor-Actor, Pairs),
         memberchk(action-Action, Pairs),
-        context_answer(Actor, Action, Object)
+        context_answer_object(Actor, Action, Object)
     ->  format(string(Response), "~w", [Object]),
         Debug = debug{dimensions:Pairs, prediction:Object, explanation:context}
+    ;   memberchk(query-actor, Pairs),
+        memberchk(action-Action, Pairs),
+        memberchk(object-Object, Pairs),
+        context_answer_actor(Action, Object, Actor)
+    ->  format(string(Response), "~w", [Actor]),
+        Debug = debug{dimensions:Pairs, prediction:Actor, explanation:context}
     ;   predict_response_no_context(Pairs, Response, Debug)
     ).
 
-context_answer(Actor, Action, Object) :-
+context_answer_object(Actor, Action, Object) :-
     list_context(Context),
     reverse(Context, Reversed),
     member(context(_, ContextPairs, _), Reversed),
     memberchk(actor-Actor, ContextPairs),
     memberchk(action-Action, ContextPairs),
     memberchk(object-Object, ContextPairs),
+    !.
+
+context_answer_actor(Action, Object, Actor) :-
+    list_context(Context),
+    reverse(Context, Reversed),
+    member(context(_, ContextPairs, _), Reversed),
+    memberchk(action-Action, ContextPairs),
+    memberchk(object-Object, ContextPairs),
+    memberchk(actor-Actor, ContextPairs),
     !.
 
 partial_observation(Pairs) :-
@@ -75,17 +91,18 @@ partial_observation(Pairs) :-
     member(query-_, Pairs).
 
 predict_response_no_context(Pairs, Response, Debug) :-
-    exclude(query_marker, Pairs, PredictionPairs),
-    predict_known_dimensions(PredictionPairs, Candidates),
-    prediction_result(PredictionPairs, Candidates, Response, Debug).
+    prediction_known_pairs(Pairs, KnownPairs),
+    predict_known_dimensions(KnownPairs, Candidates),
+    prediction_result(KnownPairs, Candidates, Response, Debug).
 
 query_marker(query-_).
 
 predict_response(Pairs, Response, Debug, EventId) :-
     remember_context(Pairs, user_partial, EventId),
     update_discourse(Pairs),
-    predict_known_dimensions(Pairs, Candidates),
-    prediction_result(Pairs, Candidates, Response, Debug).
+    prediction_known_pairs(Pairs, KnownPairs),
+    predict_known_dimensions(KnownPairs, Candidates),
+    prediction_result(KnownPairs, Candidates, Response, Debug).
 
 prediction_result(KnownPairs, Candidates, Response, Debug) :-
     (   best_candidate(Candidates, best(BestPair, Score, _Evidence))
@@ -112,11 +129,32 @@ handle_correction(CorrectedPairs, Response, Debug, EventId) :-
     ).
 
 corrected_pair(Pairs, Pair) :-
+    memberchk(object-Value, Pairs),
+    !,
+    Pair = object-Value.
+corrected_pair(Pairs, Pair) :-
+    memberchk(target-Value, Pairs),
+    !,
+    Pair = target-Value.
+corrected_pair(Pairs, Pair) :-
     member(Pair, Pairs),
     Pair = (_-_),
     Pair \= speech_act-_,
     Pair \= token_count-_,
     Pair \= token(_)-_.
+
+query_input(Pairs) :-
+    member(query-_, Pairs).
+
+prediction_known_pairs(Pairs, KnownPairs) :-
+    exclude(non_predictive_pair, Pairs, KnownPairs).
+
+non_predictive_pair(query-_).
+non_predictive_pair(speech_act-_).
+non_predictive_pair(token_count-_).
+non_predictive_pair(token(_)-_).
+non_predictive_pair(_-Value) :-
+    memberchk(Value, [something, someone, unknown, x]).
 
 discourse_entities(Entities) :-
     get_state(last_reference, Reference),
@@ -161,4 +199,3 @@ entity_in_pairs(Pairs, target-Entity) :-
     ),
     atomic(Entity),
     \+ memberchk(Entity, [something, someone, unknown]).
-

@@ -11,4 +11,11 @@ test(predicts_missing_dimension, [setup(bootstrap)]) :-
     Candidates = [candidate(object-song, Score, _)|_],
     Score > 0.
 
+test(predicts_from_placeholder_sentence, [setup(bootstrap)]) :-
+    chat('Alice creates songs.', _, _),
+    chat('Alice creates songs.', _, _),
+    chat('Alice creates songs.', _, _),
+    chat('alice create something', Response, _),
+    sub_string(Response, 0, _, _, "I predict").
+
 :- end_tests(prediction).
