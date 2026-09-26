@@ -14,14 +14,14 @@ save_memory(Path) :-
     ).
 
 load_memory(Path) :-
-    reset_memory,
     (   exists_file(Path)
-    ->  setup_call_cleanup(
+    ->  reset_memory,
+        setup_call_cleanup(
             open(Path, read, Stream),
             load_terms(Stream),
             close(Stream)
         )
-    ;   true
+    ;   throw(error(existence_error(source_sink, Path), load_memory/1))
     ).
 
 load_terms(Stream) :-

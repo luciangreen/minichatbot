@@ -122,7 +122,7 @@ discourse_entities(Entities) :-
     get_state(last_reference, Reference),
     get_state(last_subject, Subject),
     (get_state(last_target, Target) -> true ; Target = Subject),
-    Entities = [subject-Subject, reference-Reference, target-Target],
+    Entities = [reference-Reference, target-Target],
     !.
 discourse_entities(Entities) :-
     list_context(Context),

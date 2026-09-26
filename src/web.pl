@@ -65,18 +65,24 @@ predictions_handler(_Request) :-
 forget_handler(Request) :-
     (   read_json_dict_safe(Request, Dict)
     ->  (   _{observation_id:RawId} :< Dict
-    ->  (   normalize_request_atom(RawId, Id)
-        ->  (   forget_observation(Id)
-            ->  reply_json_dict(_{forgotten:Id})
-            ;   reply_json_dict(_{error:"observation not found", observation_id:Id}, [status(404)])
+    ->  (   normalize_request_value(RawId, IdInput)
+        ->  (   resolve_observation_id(IdInput, Id)
+            ->  (   forget_observation(Id)
+                ->  reply_json_dict(_{forgotten:Id})
+                ;   reply_json_dict(_{error:"observation not found", observation_id:IdInput}, [status(404)])
+                )
+            ;   reply_json_dict(_{error:"observation not found", observation_id:IdInput}, [status(404)])
             )
         ;   reply_json_dict(_{error:"observation_id must be a string or atom"}, [status(400)])
         )
     ;   _{concept:RawConcept} :< Dict
-    ->  (   normalize_request_atom(RawConcept, Concept)
-        ->  (   forget_concept(Concept)
-            ->  reply_json_dict(_{forgotten:Concept})
-            ;   reply_json_dict(_{error:"concept not found", concept:Concept}, [status(404)])
+    ->  (   normalize_request_value(RawConcept, ConceptInput)
+        ->  (   resolve_concept_name(ConceptInput, Concept)
+            ->  (   forget_concept(Concept)
+                ->  reply_json_dict(_{forgotten:Concept})
+                ;   reply_json_dict(_{error:"concept not found", concept:ConceptInput}, [status(404)])
+                )
+            ;   reply_json_dict(_{error:"concept not found", concept:ConceptInput}, [status(404)])
             )
         ;   reply_json_dict(_{error:"concept must be a string or atom"}, [status(400)])
         )
@@ -106,12 +112,28 @@ json_terms(Terms, Strings) :-
 json_term(Term, String) :-
     term_string(Term, String).
 
-normalize_request_atom(Value, Atom) :-
+normalize_request_value(Value, Value) :-
     string(Value),
-    !,
-    atom_string(Atom, Value).
-normalize_request_atom(Value, Value) :-
+    !.
+normalize_request_value(Value, Value) :-
     atom(Value).
+
+resolve_observation_id(Value, Id) :-
+    list_observations(Observations),
+    member(observation(Id, _, _), Observations),
+    identifier_matches(Value, Id).
+
+resolve_concept_name(Value, Name) :-
+    list_concepts(Concepts),
+    member(concept(Name, _, _, _), Concepts),
+    identifier_matches(Value, Name).
+
+identifier_matches(Value, Id) :-
+    atom(Value),
+    Value == Id.
+identifier_matches(Value, Id) :-
+    string(Value),
+    atom_string(Id, Value).
 
 read_json_dict_safe(Request, Dict) :-
     catch(http_read_json_dict(Request, Dict), _, fail).

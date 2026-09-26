@@ -4,6 +4,7 @@
 :- use_module('../src/memory.pl').
 :- use_module('../src/concepts.pl').
 :- use_module(library(http/http_open)).
+:- use_module(library(http/http_client)).
 
 
 test(starts_empty, [setup(bootstrap)]) :-
@@ -52,6 +53,36 @@ test(web_predictions_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-
             close(Stream)
         ),
         sub_string(Body, _, _, _, "object-song")
+    )).
+
+test(web_chat_missing_input_returns_400, [setup(bootstrap), cleanup(stop_server)]) :-
+    once((
+        start_server(8094),
+        catch(
+            http_open('http://127.0.0.1:8094/chat', Stream, [
+                method(post),
+                post(string('{}')),
+                request_header('Content-Type'='application/json')
+            ]),
+            error(existence_error(url, _), context(_, status(400, _))),
+            Stream = error_400
+        ),
+        Stream == error_400
+    )).
+
+test(web_forget_invalid_json_returns_400, [setup(bootstrap), cleanup(stop_server)]) :-
+    once((
+        start_server(8095),
+        catch(
+            http_open('http://127.0.0.1:8095/forget', Stream, [
+                method(post),
+                post(string('{')),
+                request_header('Content-Type'='application/json')
+            ]),
+            error(existence_error(url, _), context(_, status(400, _))),
+            Stream = error_400
+        ),
+        Stream == error_400
     )).
 
 :- end_tests(bootstrap).
