@@ -77,11 +77,36 @@ test(web_memory_counts_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-
             json_read_dict(Stream, Json),
             close(Stream)
         ),
-        Json.counts.observations =:= 0,
-        Json.counts.predictions =:= 0,
-        Json.counts.concepts =:= 0,
-        Json.counts.corrections =:= 0,
-        string(Json.memory)
+        string(Json.memory),
+        Json.snapshot.counts.observations =:= 0,
+        Json.snapshot.counts.associations =:= 0,
+        Json.snapshot.counts.predictions =:= 0,
+        Json.snapshot.counts.concepts =:= 0,
+        Json.snapshot.counts.corrections =:= 0,
+        Json.snapshot.observations == [],
+        Json.snapshot.associations == [],
+        Json.snapshot.concept_labels == [],
+        Json.snapshot.prediction_labels == []
+    )).
+
+test(web_memory_counts_endpoint_after_activity, [setup(bootstrap), cleanup(stop_server)]) :-
+    once((
+        learn([action-create, mode-imperative], [], [object-song], _),
+        chat("create something", _, _),
+        start_server(8090),
+        setup_call_cleanup(
+            http_open('http://127.0.0.1:8090/memory', Stream, []),
+            json_read_dict(Stream, Json),
+            close(Stream)
+        ),
+        Json.snapshot.counts.observations =:= 1,
+        Json.snapshot.counts.associations =:= 1,
+        Json.snapshot.counts.predictions =:= 1,
+        Json.snapshot.counts.concepts =:= 0,
+        Json.snapshot.counts.corrections =:= 0,
+        Json.snapshot.associations = [_|_],
+        Json.snapshot.prediction_labels = [FirstPrediction|_],
+        FirstPrediction == "object-song"
     )).
 
 test(web_predictions_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-

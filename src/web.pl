@@ -54,8 +54,9 @@ chat_handler(Request) :-
 
 memory_handler(_Request) :-
     memory_snapshot(Snapshot),
-    json_term(Snapshot, SnapshotJson),
-    reply_json_dict(_{memory:SnapshotJson, counts:Snapshot.counts}).
+    json_term(Snapshot, SnapshotString),
+    snapshot_json(Snapshot, SnapshotJson),
+    reply_json_dict(_{memory:SnapshotString, snapshot:SnapshotJson}).
 
 concepts_handler(_Request) :-
     list_concepts(Concepts),
@@ -117,6 +118,71 @@ json_terms(Terms, Strings) :-
 json_term(Term, String) :-
     term_string(Term, String).
 
+snapshot_json(snapshot{
+    observations:ObservationTerms,
+    associations:AssociationTerms,
+    concepts:ConceptTerms,
+    predictions:PredictionTerms,
+    corrections:CorrectionTerms,
+    context:ContextTerms,
+    counts:CountTerms
+}, Json) :-
+    serialize_terms(ObservationTerms, Observations),
+    serialize_terms(AssociationTerms, Associations),
+    serialize_terms(ConceptTerms, Concepts),
+    serialize_terms(PredictionTerms, Predictions),
+    serialize_terms(CorrectionTerms, Corrections),
+    serialize_terms(ContextTerms, Context),
+    concept_labels(ConceptTerms, ConceptLabels),
+    prediction_labels(PredictionTerms, PredictionLabels),
+    counts_json(CountTerms, Counts),
+    Json = _{
+        observations:Observations,
+        associations:Associations,
+        concepts:Concepts,
+        predictions:Predictions,
+        corrections:Corrections,
+        context:Context,
+        concept_labels:ConceptLabels,
+        prediction_labels:PredictionLabels,
+        counts:Counts
+    }.
+
+serialize_terms(Terms, Strings) :-
+    maplist(json_term, Terms, Strings).
+
+counts_json(counts{
+    observations:Observations,
+    associations:Associations,
+    concepts:Concepts,
+    predictions:Predictions,
+    corrections:Corrections
+}, _{
+    observations:Observations,
+    associations:Associations,
+    concepts:Concepts,
+    predictions:Predictions,
+    corrections:Corrections
+}).
+
+concept_labels(Concepts, Labels) :-
+    maplist(concept_label, Concepts, Labels).
+
+concept_label(concept(Name, _, _, _), Label) :-
+    !,
+    format(string(Label), "~w", [Name]).
+concept_label(Term, Label) :-
+    term_string(Term, Label).
+
+prediction_labels(Predictions, Labels) :-
+    maplist(prediction_label, Predictions, Labels).
+
+prediction_label(prediction(_, _, _, Selected, _), Label) :-
+    !,
+    format(string(Label), "~w", [Selected]).
+prediction_label(Term, Label) :-
+    term_string(Term, Label).
+
 normalize_request_value(Value, Value) :-
     string(Value),
     !.
@@ -147,14 +213,21 @@ json_read_error(error(syntax_error(_), _)).
 json_read_error(error(type_error(json_term, _), _)).
 json_read_error(error(domain_error(json, _), _)).
 
-home_page_html("<!DOCTYPE html>
-<html lang=\"en\">
-<head>
-  <meta charset=\"UTF-8\">
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-  <title>minichatbot</title>
-  <style>
-    :root {
+home_page_html(Html) :-
+    home_page_styles(Styles),
+    home_page_markup(Markup),
+    home_page_script(Script),
+    atomics_to_string([
+        "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>minichatbot</title>\n  <style>\n",
+        Styles,
+        "  </style>\n</head>\n<body>\n",
+        Markup,
+        "  <script>\n",
+        Script,
+        "  </script>\n</body>\n</html>\n"
+    ], Html).
+
+home_page_styles("    :root {
       color-scheme: light;
       font-family: Arial, sans-serif;
       --bg: #f4f7fb;
@@ -374,10 +447,9 @@ home_page_html("<!DOCTYPE html>
         max-width: 100%;
       }
     }
-  </style>
-</head>
-<body>
-  <main>
+").
+
+home_page_markup("  <main>
     <section class=\"hero\">
       <h1>minichatbot</h1>
       <p>Have a conversation with the symbolic chatbot, see its responses immediately, and inspect what it remembers as you chat.</p>
@@ -390,10 +462,11 @@ home_page_html("<!DOCTYPE html>
             <p>Ask a question, teach the bot something new, or try a correction after a prediction.</p>
           </div>
         </div>
-        <div id=\"transcript\" aria-live=\"polite\" aria-label=\"Conversation transcript\"></div>
+        <div id=\"transcript\" role=\"log\" tabindex=\"0\" aria-live=\"polite\" aria-relevant=\"additions\" aria-label=\"Conversation transcript\"></div>
         <form id=\"chat-form\">
           <label for=\"chat-input\">Message</label>
-          <textarea id=\"chat-input\" name=\"input\" placeholder=\"Try: create something\" required></textarea>
+          <p id=\"chat-input-help\">Example: create something</p>
+          <textarea id=\"chat-input\" name=\"input\" aria-describedby=\"chat-input-help\" placeholder=\"Try: create something\" required></textarea>
           <div class=\"actions\">
             <button id=\"send-button\" type=\"submit\">Send message</button>
             <button id=\"reset-button\" type=\"button\">Reset memory</button>
@@ -408,6 +481,7 @@ home_page_html("<!DOCTYPE html>
         </div>
         <div class=\"metric-grid\">
           <div class=\"metric\"><strong id=\"observation-count\">0</strong><span>Observations</span></div>
+          <div class=\"metric\"><strong id=\"association-count\">0</strong><span>Associations</span></div>
           <div class=\"metric\"><strong id=\"prediction-count\">0</strong><span>Predictions</span></div>
           <div class=\"metric\"><strong id=\"concept-count\">0</strong><span>Concepts</span></div>
           <div class=\"metric\"><strong id=\"correction-count\">0</strong><span>Corrections</span></div>
@@ -427,8 +501,9 @@ home_page_html("<!DOCTYPE html>
       </aside>
     </section>
   </main>
-  <script>
-    const transcript = document.getElementById('transcript');
+").
+
+home_page_script("    const transcript = document.getElementById('transcript');
     const form = document.getElementById('chat-form');
     const input = document.getElementById('chat-input');
     const sendButton = document.getElementById('send-button');
@@ -438,6 +513,7 @@ home_page_html("<!DOCTYPE html>
     const conceptList = document.getElementById('concept-list');
     const predictionList = document.getElementById('prediction-list');
     const observationCount = document.getElementById('observation-count');
+    const associationCount = document.getElementById('association-count');
     const predictionCount = document.getElementById('prediction-count');
     const conceptCount = document.getElementById('concept-count');
     const correctionCount = document.getElementById('correction-count');
@@ -465,7 +541,7 @@ home_page_html("<!DOCTYPE html>
     }
 
     function replaceList(node, items, fallback) {
-      node.innerHTML = '';
+      node.replaceChildren();
       if (!items || items.length === 0) {
         const item = document.createElement('li');
         item.textContent = fallback;
@@ -488,7 +564,10 @@ home_page_html("<!DOCTYPE html>
         : null;
 
       if (!response.ok) {
-        throw new Error((data && data.error) || `Request failed for ${url}.`);
+        const statusDetail = response.statusText
+          ? `${response.status} ${response.statusText}`
+          : `${response.status}`;
+        throw new Error((data && data.error) || `Request failed for ${url} (${statusDetail}).`);
       }
 
       return data;
@@ -496,20 +575,17 @@ home_page_html("<!DOCTYPE html>
 
     async function refreshSidebar() {
       try {
-        const [memoryData, conceptsData, predictionsData] = await Promise.all([
-          fetchJson('/memory'),
-          fetchJson('/concepts'),
-          fetchJson('/predictions')
-        ]);
-
-        const counts = memoryData.counts || {};
+        const memoryData = await fetchJson('/memory');
+        const snapshot = memoryData.snapshot || {};
+        const counts = snapshot.counts || {};
         observationCount.textContent = counts.observations || 0;
+        associationCount.textContent = counts.associations || 0;
         predictionCount.textContent = counts.predictions || 0;
         conceptCount.textContent = counts.concepts || 0;
         correctionCount.textContent = counts.corrections || 0;
 
-        replaceList(conceptList, conceptsData.concepts, 'None yet.');
-        replaceList(predictionList, predictionsData.predictions, 'None yet.');
+        replaceList(conceptList, snapshot.concept_labels, 'None yet.');
+        replaceList(predictionList, snapshot.prediction_labels, 'None yet.');
       } catch (_) {
         statusNode.textContent = 'Unable to refresh sidebar right now.';
       }
@@ -554,7 +630,7 @@ home_page_html("<!DOCTYPE html>
       try {
         await fetchJson('/reset', { method: 'POST' });
 
-        transcript.innerHTML = '';
+        transcript.replaceChildren();
         debugOutput.textContent = 'Send a message to inspect model details.';
         addMessage('system', 'System', 'Memory and dialogue state were reset.');
         statusNode.textContent = 'Memory reset.';
@@ -571,7 +647,4 @@ home_page_html("<!DOCTYPE html>
     addMessage('assistant', 'Bot', 'Hello! Start a conversation by teaching me something or asking a question.');
     refreshSidebar();
     input.focus();
-  </script>
-</body>
-</html>
 ").
