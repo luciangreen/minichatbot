@@ -15,20 +15,23 @@ save_memory(Path) :-
 
 load_memory(Path) :-
     (   exists_file(Path)
-    ->  reset_memory,
-        setup_call_cleanup(
+    ->  setup_call_cleanup(
             open(Path, read, Stream),
-            load_terms(Stream),
+            read_terms(Stream, Terms),
             close(Stream)
-        )
+        ),
+        maplist(memory:valid_memory_term, Terms),
+        reset_memory,
+        maplist(import_memory_term, Terms)
     ;   throw(error(existence_error(source_sink, Path), load_memory/1))
     ).
 
-load_terms(Stream) :-
-    repeat,
-        read_term(Stream, Term, []),
-        (   Term == end_of_file
-        ->  !
-        ;   import_memory_term(Term),
-            fail
-        ).
+read_terms(Stream, Terms) :-
+    read_terms(Stream, [], Terms).
+
+read_terms(Stream, Acc, Terms) :-
+    read_term(Stream, Term, []),
+    (   Term == end_of_file
+    ->  reverse(Acc, Terms)
+    ;   read_terms(Stream, [Term|Acc], Terms)
+    ).

@@ -152,10 +152,13 @@ discourse_focus(Pairs, Focus) :-
     ; memberchk(actor-Focus, Pairs)
     ).
 
-entity_in_pairs(Pairs, Entity) :-
-    ( memberchk(actor-Entity, Pairs)
-    ; memberchk(target-Entity, Pairs)
-    ; memberchk(object-Entity, Pairs)
+entity_in_pairs(Pairs, reference-Entity) :-
+    memberchk(object-Entity, Pairs),
+    atomic(Entity),
+    \+ memberchk(Entity, [something, someone, unknown]).
+entity_in_pairs(Pairs, target-Entity) :-
+    ( memberchk(target-Entity, Pairs)
+    ; memberchk(actor-Entity, Pairs)
     ),
     atomic(Entity),
     \+ memberchk(Entity, [something, someone, unknown]).

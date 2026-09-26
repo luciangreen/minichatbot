@@ -42,6 +42,18 @@ test(dialogue_partial_prediction_records_prediction, [setup(bootstrap)]) :-
     Debug.prediction == object-song,
     memory:list_predictions([prediction(_, _, _, object-song, _)|_]).
 
+
+test(web_predictions_empty_state, [setup(bootstrap), cleanup(stop_server)]) :-
+    once((
+        start_server(8096),
+        setup_call_cleanup(
+            http_open('http://127.0.0.1:8096/predictions', Stream, []),
+            read_string(Stream, _, Body),
+            close(Stream)
+        ),
+        sub_string(Body, _, _, _, "\"predictions\": []")
+    )).
+
 test(web_predictions_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-
     once((
         learn([action-create, mode-imperative], [], [object-song], _),

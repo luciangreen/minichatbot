@@ -16,7 +16,8 @@ generalise_observations(Observations, observation(Generalised)) :-
         varying_dimension(Key, PairLists, CommonPairs, Values),
         VariablePairs0),
     sort(VariablePairs0, VariablePairs),
-    append(CommonPairs, VariablePairs, Generalised).
+    append(CommonPairs, VariablePairs, Generalised0),
+    observation_from_pairs(Generalised0, observation(Generalised)).
 
 varying_dimension(Key, PairLists, CommonPairs, Values) :-
     findall(Key0, (member(Pairs, PairLists), member(Key0-_, Pairs)), Keys0),
