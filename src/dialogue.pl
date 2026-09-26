@@ -35,7 +35,9 @@ chat(Input, Response, Debug, EventId) :-
 reset_dialogue :-
     clear_state(last_prediction),
     clear_state(last_input),
-    clear_state(last_response).
+    clear_state(last_response),
+    clear_state(last_reference),
+    clear_state(last_subject).
 
 correction_input(Pairs, Corrected) :-
     memberchk(token(1)-no, Pairs),
@@ -115,9 +117,10 @@ corrected_pair(Pairs, Pair) :-
     Pair \= token_count-_,
     Pair \= token(_)-_.
 
-discourse_entities([Focus, Actor]) :-
-    get_state(last_focus, Focus),
-    get_state(last_actor, Actor),
+discourse_entities(Entities) :-
+    get_state(last_reference, Reference),
+    get_state(last_subject, Subject),
+    Entities = [Reference, Subject],
     !.
 discourse_entities(Entities) :-
     list_context(Context),
@@ -130,14 +133,14 @@ discourse_entities(Entities) :-
     list_to_set(Entities0, Entities).
 
 update_discourse(Pairs) :-
-    ( memberchk(actor-Actor, Pairs) -> set_state(last_actor, Actor) ; true ),
+    ( memberchk(actor-Actor, Pairs) -> set_state(last_subject, Actor) ; true ),
     ( memberchk(target-_, Pairs) -> discourse_focus(Pairs, Focus)
     ; memberchk(object-_, Pairs) -> discourse_focus(Pairs, Focus)
     ; memberchk(actor-_, Pairs) -> discourse_focus(Pairs, Focus)
     ; fail
     ),
     !,
-    set_state(last_focus, Focus).
+    set_state(last_reference, Focus).
 update_discourse(_).
 
 discourse_focus(Pairs, Focus) :-

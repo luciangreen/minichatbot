@@ -104,10 +104,11 @@ list_context(Context) :-
     findall(context(Id, Pairs, Source), stored_context(Id, Pairs, Source), Context).
 
 forget_observation(Id) :-
-    retractall(stored_observation(Id, _, _)),
-    retractall(stored_context(Id, _, _)).
+    retract(stored_observation(Id, _, _)),
+    retractall(stored_observation(Id, _, _)).
 
 forget_concept(Name) :-
+    retract(stored_concept(Name, _, _, _)),
     retractall(stored_concept(Name, _, _, _)).
 
 revise_association(Known, Key, Value, Delta) :-

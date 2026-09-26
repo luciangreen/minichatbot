@@ -57,11 +57,15 @@ predictions_handler(_Request) :-
 forget_handler(Request) :-
     http_read_json_dict(Request, Dict),
     (   _{observation_id:Id} :< Dict
-    ->  forget_observation(Id),
-        reply_json_dict(_{forgotten:Id})
+    ->  (   forget_observation(Id)
+        ->  reply_json_dict(_{forgotten:Id})
+        ;   reply_json_dict(_{error:"observation not found", observation_id:Id}, [status(404)])
+        )
     ;   _{concept:Concept} :< Dict
-    ->  forget_concept(Concept),
-        reply_json_dict(_{forgotten:Concept})
+    ->  (   forget_concept(Concept)
+        ->  reply_json_dict(_{forgotten:Concept})
+        ;   reply_json_dict(_{error:"concept not found", concept:Concept}, [status(404)])
+        )
     ;   reply_json_dict(_{error:"expected observation_id or concept"}, [status(400)])
     ).
 

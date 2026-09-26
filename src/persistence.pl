@@ -16,13 +16,19 @@ save_memory(Path) :-
 load_memory(Path) :-
     reset_memory,
     (   exists_file(Path)
-    ->  open(Path, read, Stream),
-        repeat,
-            read_term(Stream, Term, []),
-            (   Term == end_of_file
-            ->  close(Stream), !
-            ;   import_memory_term(Term),
-                fail
-            )
+    ->  setup_call_cleanup(
+            open(Path, read, Stream),
+            load_terms(Stream),
+            close(Stream)
+        )
     ;   true
     ).
+
+load_terms(Stream) :-
+    repeat,
+        read_term(Stream, Term, []),
+        (   Term == end_of_file
+        ->  !
+        ;   import_memory_term(Term),
+            fail
+        ).
