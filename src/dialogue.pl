@@ -91,7 +91,7 @@ partial_observation(Pairs) :-
     member(query-_, Pairs).
 
 predict_response_no_context(Pairs, Response, Debug) :-
-    prediction_known_pairs(Pairs, KnownPairs),
+    predictive_pairs(Pairs, KnownPairs),
     predict_known_dimensions(KnownPairs, Candidates),
     prediction_result(KnownPairs, Candidates, Response, Debug).
 
@@ -100,7 +100,7 @@ query_marker(query-_).
 predict_response(Pairs, Response, Debug, EventId) :-
     remember_context(Pairs, user_partial, EventId),
     update_discourse(Pairs),
-    prediction_known_pairs(Pairs, KnownPairs),
+    predictive_pairs(Pairs, KnownPairs),
     predict_known_dimensions(KnownPairs, Candidates),
     prediction_result(KnownPairs, Candidates, Response, Debug).
 
@@ -146,7 +146,7 @@ corrected_pair(Pairs, Pair) :-
 query_input(Pairs) :-
     member(query-_, Pairs).
 
-prediction_known_pairs(Pairs, KnownPairs) :-
+predictive_pairs(Pairs, KnownPairs) :-
     exclude(non_predictive_pair, Pairs, KnownPairs).
 
 non_predictive_pair(query-_).
