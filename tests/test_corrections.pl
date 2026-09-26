@@ -1,6 +1,6 @@
 :- begin_tests(corrections).
 
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/chatbot.pl').
+:- use_module('../src/chatbot.pl').
 
 
 test(revises_prediction_after_correction, [setup(bootstrap)]) :-

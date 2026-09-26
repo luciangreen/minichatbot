@@ -1,6 +1,6 @@
 :- begin_tests(prediction).
 
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/chatbot.pl').
+:- use_module('../src/chatbot.pl').
 
 
 test(predicts_missing_dimension, [setup(bootstrap)]) :-

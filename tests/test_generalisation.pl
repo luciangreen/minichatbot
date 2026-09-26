@@ -1,8 +1,8 @@
 :- begin_tests(generalisation).
 
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/generalise.pl').
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/chatbot.pl').
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/concepts.pl').
+:- use_module('../src/generalise.pl').
+:- use_module('../src/chatbot.pl').
+:- use_module('../src/concepts.pl').
 
 
 test(generalises_varying_dimensions) :-

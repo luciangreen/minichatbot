@@ -1,7 +1,7 @@
 :- begin_tests(learning).
 
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/chatbot.pl').
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/memory.pl').
+:- use_module('../src/chatbot.pl').
+:- use_module('../src/memory.pl').
 
 
 test(stores_observations, [setup(bootstrap)]) :-

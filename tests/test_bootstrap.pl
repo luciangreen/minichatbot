@@ -1,8 +1,8 @@
 :- begin_tests(bootstrap).
 
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/chatbot.pl').
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/memory.pl').
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/concepts.pl').
+:- use_module('../src/chatbot.pl').
+:- use_module('../src/memory.pl').
+:- use_module('../src/concepts.pl').
 
 
 test(starts_empty, [setup(bootstrap)]) :-

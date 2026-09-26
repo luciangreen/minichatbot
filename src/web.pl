@@ -62,7 +62,9 @@ forget_handler(Request) :-
     ;   _{concept:Concept} :< Dict
     ->  forget_concept(Concept),
         Reply = _{forgotten:Concept}
-    ;   Reply = _{error:"expected observation_id or concept"}
+    ;   Reply = _{error:"expected observation_id or concept"},
+        reply_json_dict(Reply, [status(400)]),
+        !
     ),
     reply_json_dict(Reply).
 

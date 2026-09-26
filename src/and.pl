@@ -1,4 +1,4 @@
-:- module(and_kernel,
+:- module(and,
     [ compose_and/2,
       normalize_and/2,
       and_components/2,

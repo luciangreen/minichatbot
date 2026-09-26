@@ -62,10 +62,7 @@ consolidate_candidates(Known, RawCandidates, Candidates) :-
     sort(Keys0, Keys),
     findall(candidate(Key-Value, Score, Evidence),
         ( member(Key-Value, Keys),
-          findall(Candidate,
-              member(Candidate, RawCandidates),
-              Matching),
-          include(matches_pair(Key-Value), Matching, PairMatches),
+          include(matches_pair(Key-Value), RawCandidates, PairMatches),
           PairMatches \= [],
           score_candidates(Known, Key-Value, PairMatches, Score, Evidence)
         ),

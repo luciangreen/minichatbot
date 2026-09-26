@@ -52,11 +52,13 @@ source_line_count(LineCount) :-
     sum_list(Counts, LineCount).
 
 source_files(Files) :-
-    directory_files('/home/runner/work/minichatbot/minichatbot/src', Entries),
+    source_file(chatbot:bootstrap, ThisFile),
+    file_directory_name(ThisFile, Dir),
+    directory_files(Dir, Entries),
     include(prolog_file, Entries, PrologEntries),
     findall(Path,
         ( member(Entry, PrologEntries),
-          atomic_list_concat(['/home/runner/work/minichatbot/minichatbot/src', Entry], '/', Path)
+          directory_file_path(Dir, Entry, Path)
         ),
         Files).
 

@@ -1,6 +1,6 @@
 :- begin_tests(dimensions).
 
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/dimensions.pl').
+:- use_module('../src/dimensions.pl').
 
 test(infer_dimensions_from_text) :-
     infer_dimensions("robot finds father", observation(Pairs)),

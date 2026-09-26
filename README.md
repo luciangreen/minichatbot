@@ -5,13 +5,13 @@ A minimal SWI-Prolog web chatbot that starts with a small symbolic kernel built 
 ## Run tests
 
 ```sh
-swipl -q -f /home/runner/work/minichatbot/minichatbot/tests/run_tests.pl
+swipl -q -f tests/run_tests.pl
 ```
 
 ## Start the web chatbot
 
 ```sh
-swipl -q -g "use_module('/home/runner/work/minichatbot/minichatbot/src/chatbot.pl'), start_server(8080)" -t halt
+swipl -q -g "use_module('src/chatbot.pl'), start_server(8080), thread_get_message(stop)"
 ```
 
 ## HTTP endpoints

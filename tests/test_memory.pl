@@ -1,7 +1,7 @@
 :- begin_tests(memory).
 
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/chatbot.pl').
-:- use_module('/home/runner/work/minichatbot/minichatbot/src/memory.pl').
+:- use_module('../src/chatbot.pl').
+:- use_module('../src/memory.pl').
 
 
 test(persists_and_reloads_memory, [setup(bootstrap), cleanup(delete_file('/tmp/minichatbot-memory.pl'))]) :-
