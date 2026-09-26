@@ -10,7 +10,8 @@ compose_and(Components, And) :-
 
 normalize_and(Term, and(Normalized)) :-
     and_components(Term, Components),
-    maplist(normalize_component, Components, Normalized).
+    maplist(normalize_component, Components, Normalized0),
+    sort(Normalized0, Normalized).
 
 and_components(and(Components), Flattened) :-
     is_list(Components),

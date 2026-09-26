@@ -3,7 +3,7 @@
 :- use_module('../src/and.pl').
 
 test(normalize_nested_and) :-
-    normalize_and(and(red, and(ball, round)), and([red, ball, round])).
+    normalize_and(and(red, and(ball, round)), and([ball, red, round])).
 
 test(and_contains) :-
     and_contains(and([robot, remembers, father]), remembers).

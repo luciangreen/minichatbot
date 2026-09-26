@@ -221,24 +221,75 @@ import_memory_term(Term) :-
 import_memory_term(Term) :-
     throw(error(domain_error(memory_term, Term), import_memory_term/1)).
 
-valid_term_list(Value) :- is_list(Value).
-valid_meta(_).
-valid_atomic_or_term(Value) :- nonvar(Value).
+valid_term_list(Value) :-
+    is_list(Value),
+    maplist(valid_persisted_value, Value).
+
+valid_meta(Value) :-
+    valid_persisted_value(Value).
 
 valid_memory_term(stored_observation(Id, Pairs, Meta)) :-
     atom(Id), valid_term_list(Pairs), valid_meta(Meta).
 valid_memory_term(stored_association(Id, Known, Key, Value, Weight, Evidence)) :-
-    atom(Id), valid_term_list(Known), nonvar(Key), nonvar(Value), integer(Weight), valid_term_list(Evidence).
+    atom(Id), valid_term_list(Known), valid_persisted_value(Key), valid_persisted_value(Value), integer(Weight), valid_term_list(Evidence).
 valid_memory_term(stored_concept(Name, Structure, Evidence, Meta)) :-
-    atom(Name), valid_atomic_or_term(Structure), valid_term_list(Evidence), valid_meta(Meta).
+    atom(Name), valid_persisted_value(Structure), valid_term_list(Evidence), valid_meta(Meta).
 valid_memory_term(stored_prediction(Id, Known, Candidates, Selected, Explanation)) :-
-    atom(Id), valid_term_list(Known), valid_term_list(Candidates), valid_atomic_or_term(Selected), valid_atomic_or_term(Explanation).
+    atom(Id), valid_term_list(Known), valid_term_list(Candidates), valid_persisted_value(Selected), valid_persisted_value(Explanation).
 valid_memory_term(stored_correction(Id, Known, Rejected, Corrected, Evidence)) :-
-    atom(Id), valid_term_list(Known), valid_atomic_or_term(Rejected), valid_atomic_or_term(Corrected), valid_atomic_or_term(Evidence).
+    atom(Id), valid_term_list(Known), valid_persisted_value(Rejected), valid_persisted_value(Corrected), valid_persisted_value(Evidence).
 valid_memory_term(stored_context(Id, Pairs, Source)) :-
-    atom(Id), valid_term_list(Pairs), valid_atomic_or_term(Source).
+    atom(Id), valid_term_list(Pairs), valid_persisted_value(Source).
 valid_memory_term(id_counter(Type, Value)) :-
     atom(Type), integer(Value), Value >= 0.
+
+valid_persisted_value(Value) :-
+    valid_persisted_value(Value, 0).
+
+valid_persisted_value(Value, _Depth) :-
+    atomic(Value),
+    !.
+valid_persisted_value(Value, _Depth) :-
+    string(Value),
+    !.
+valid_persisted_value(Value, Depth) :-
+    Depth < 8,
+    is_dict(Value),
+    !,
+    NextDepth is Depth + 1,
+    dict_pairs(Value, _, Pairs),
+    maplist(valid_persisted_pair(NextDepth), Pairs).
+valid_persisted_value(Value, Depth) :-
+    Depth < 8,
+    is_list(Value),
+    !,
+    NextDepth is Depth + 1,
+    maplist(valid_persisted_value_at(NextDepth), Value).
+valid_persisted_value(Term, Depth) :-
+    Depth < 8,
+    compound(Term),
+    compound_name_arguments(Term, Name, Args),
+    allowed_persisted_functor(Name, Args),
+    NextDepth is Depth + 1,
+    maplist(valid_persisted_value_at(NextDepth), Args).
+
+valid_persisted_pair(Depth, _Key-Value) :-
+    valid_persisted_value(Value, Depth).
+
+valid_persisted_value_at(Depth, Value) :-
+    valid_persisted_value(Value, Depth).
+
+allowed_persisted_functor(-, [_Key, _Value]).
+allowed_persisted_functor(one_of, [_]).
+allowed_persisted_functor(and, [_]).
+allowed_persisted_functor(observation, [_]).
+allowed_persisted_functor(interaction, [_, _, _]).
+allowed_persisted_functor(candidate, [_, _, _]).
+allowed_persisted_functor(evidence, [_]).
+allowed_persisted_functor(concept, [_]).
+allowed_persisted_functor(counts, [_|_]).
+allowed_persisted_functor(snapshot, [_|_]).
+allowed_persisted_functor(debug, [_|_]).
 
 normalize_evidence(Evidence0, Evidence) :-
     exclude(var, Evidence0, Evidence1),

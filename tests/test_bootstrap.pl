@@ -5,6 +5,7 @@
 :- use_module('../src/concepts.pl').
 :- use_module(library(http/http_open)).
 :- use_module(library(http/http_client)).
+:- use_module(library(http/json)).
 
 
 test(starts_empty, [setup(bootstrap)]) :-
@@ -61,10 +62,11 @@ test(web_predictions_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-
         chat("create something", _, _),
         setup_call_cleanup(
             http_open('http://127.0.0.1:8093/predictions', Stream, []),
-            read_string(Stream, _, Body),
+            json_read_dict(Stream, Json),
             close(Stream)
         ),
-        sub_string(Body, _, _, _, "object-song")
+        Json.predictions = [Prediction|_],
+        sub_string(Prediction, _, _, _, "object-song")
     )).
 
 test(web_chat_missing_input_returns_400, [setup(bootstrap), cleanup(stop_server)]) :-
