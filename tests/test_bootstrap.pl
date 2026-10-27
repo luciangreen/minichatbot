@@ -66,7 +66,7 @@ test(web_home_page_contains_chat_ui, [setup(bootstrap), cleanup(stop_server)]) :
         sub_string(Body, _, _, _, "<title>minichatbot</title>"),
         sub_string(Body, _, _, _, "id=\"chat-form\""),
         sub_string(Body, _, _, _, "Conversation"),
-        sub_string(Body, _, _, _, "fetch('/chat'")
+        sub_string(Body, _, _, _, "fetchJson('/chat'")
     )).
 
 test(web_memory_counts_endpoint, [setup(bootstrap), cleanup(stop_server)]) :-

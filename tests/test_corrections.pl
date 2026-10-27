@@ -16,7 +16,7 @@ test(correction_sentence_updates_prediction, [setup(bootstrap)]) :-
     chat('alice create song', _, _),
     chat('alice create something', PredictionResponse, _),
     sub_string(PredictionResponse, 0, _, _, "I predict"),
-    chat('no alice create melody', 'correction learned', _),
+    chat('no alice create melody', "correction learned", _),
     chat('alice create something', UpdatedResponse, _),
     sub_string(UpdatedResponse, 0, _, _, "I predict object-melody").
 
